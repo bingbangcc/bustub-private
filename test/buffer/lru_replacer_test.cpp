@@ -19,7 +19,7 @@
 
 namespace bustub {
 
-TEST(LRUReplacerTest, DISABLED_SampleTest) {
+TEST(LRUReplacerTest, /*DISABLED_*/ SampleTest) {
   LRUReplacer lru_replacer(7);
 
   // Scenario: unpin six elements, i.e. add them to the replacer.
