@@ -54,6 +54,8 @@ class BPlusTree {
   // return the value associated with a given key
   bool GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction = nullptr);
 
+  // int GetMaxSizeForDiffType(BPlusTreePage *) const;
+
   // index iterator
   INDEXITERATOR_TYPE begin();
   INDEXITERATOR_TYPE Begin(const KeyType &key);
