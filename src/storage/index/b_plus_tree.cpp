@@ -116,10 +116,10 @@ void BPLUSTREE_TYPE::StartNewTree(const KeyType &key, const ValueType &value) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction) {
-  LOG_INFO("Enter InsertIntoLeaf, the key is %ld ", key.ToString());
+  // LOG_INFO("Enter InsertIntoLeaf, the key is %ld ", key.ToString());
   Page *leaf_page = FindLeafPage(key, false);
   LeafPage *leaf_node = reinterpret_cast<LeafPage *>(leaf_page->GetData());
-  LOG_INFO("The target insert leaf page id is %d", leaf_node->GetPageId());
+  // LOG_INFO("The target insert leaf page id is %d", leaf_node->GetPageId());
 
   // int key_index = leaf_node->KeyIndex(key, comparator_);
   // 如果当前key在leaf中已经存在，返回false
@@ -137,7 +137,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
     buffer_pool_manager_->UnpinPage(new_leaf_node->GetPageId(), true);
   }
   buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), true);
-  LOG_INFO("End InsertIntoLeaf, the key is %ld ", key.ToString());
+  // LOG_INFO("End InsertIntoLeaf, the key is %ld ", key.ToString());
   return true;
 }
 
@@ -207,7 +207,7 @@ N *BPLUSTREE_TYPE::Split(N *node) {
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
                                       Transaction *transaction) {
-  LOG_INFO("Enter InsertIntoParent, the key is %ld ", key.ToString());
+  // LOG_INFO("Enter InsertIntoParent, the key is %ld ", key.ToString());
   if (old_node->IsRootPage()) {
     // B+ tree metadata
     page_id_t new_root_page_id = INVALID_PAGE_ID;
@@ -235,7 +235,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
   Page *parent_page = buffer_pool_manager_->FetchPage(parent_page_id);
   InternalPage *parent_node = reinterpret_cast<InternalPage *>(parent_page->GetData());
   int parent_current_size = parent_node->InsertNodeAfter(old_node->GetPageId(), key, new_node->GetPageId());
-  LOG_INFO("The parent node's size is %d", parent_current_size);
+  // LOG_INFO("The parent node's size is %d", parent_current_size);
 
   // parent_current_size == parent_node->GetMaxSize()
   if (parent_current_size == internal_max_size_ + 1) {
@@ -247,7 +247,7 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
   }
   buffer_pool_manager_->UnpinPage(parent_page_id, true);
 
-  LOG_INFO("End InsertIntoParent, the key is %ld ", key.ToString());
+  // LOG_INFO("End InsertIntoParent, the key is %ld ", key.ToString());
 }
 
 /*****************************************************************************
