@@ -208,6 +208,7 @@ ValueType B_PLUS_TREE_INTERNAL_PAGE_TYPE::RemoveAndReturnOnlyChild() {
 // 移动我的所有元素到目标page的后半段，因此涉及指向我的父节点的key的修改
 // middle_key是父节点指向我的key，因为array[0]是无效的，把middle_key放在这相当于一个哨兵的作用
 // 提示目标节点，新加入的这些元素的边界是middle_key
+// 把当前节点移动到其左边（前驱）节点才能保证有序
 INDEX_TEMPLATE_ARGUMENTS
 void B_PLUS_TREE_INTERNAL_PAGE_TYPE::MoveAllTo(BPlusTreeInternalPage *recipient, const KeyType &middle_key,
                                                BufferPoolManager *buffer_pool_manager) {
