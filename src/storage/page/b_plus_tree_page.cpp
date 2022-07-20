@@ -33,9 +33,7 @@ int BPlusTreePage::GetSize() const { return size_; }
 void BPlusTreePage::SetSize(int size) { size_ = size; }
 void BPlusTreePage::IncreaseSize(int amount) { size_ += amount; }
 
-int BPlusTreePage::GetKeySize() const { 
-  return IsLeafPage() ? GetSize() : GetSize() - 1; 
-}
+int BPlusTreePage::GetKeySize() const { return IsLeafPage() ? GetSize() : GetSize() - 1; }
 /*
  * Helper methods to get/set max size (capacity) of the page
  */
