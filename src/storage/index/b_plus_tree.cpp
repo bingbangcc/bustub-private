@@ -341,7 +341,7 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction, b
     return root_should_delete;
   }
 
-  if (node->GetSize() >= node->GetMinSize()) {
+  if (node->GetKeySize() >= node->GetMinSize()) {
     if (is_root_lock) {
       is_root_lock = false;
       root_latch_.unlock();
@@ -446,7 +446,7 @@ bool BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
-  Page *parent_page = buffer_pool_manager_->FetchPage(node->GetPageId());
+  Page *parent_page = buffer_pool_manager_->FetchPage(node->GetParentPageId());
   InternalPage *parent_node = reinterpret_cast<InternalPage *>(parent_page->GetData());
 
   if (node->IsLeafPage()) {
@@ -465,6 +465,7 @@ void BPLUSTREE_TYPE::Redistribute(N *neighbor_node, N *node, int index) {
     // KeyType parent_key = parent_node->KeyAt(index);
     if (index == 0) {
       KeyType parent_key = parent_node->KeyAt(1);
+      // LOG_INFO("The parent middle_key is %ld", parent_key.ToString());
       internal_neighbor_node->MoveFirstToEndOf(internal_current_node, parent_key, buffer_pool_manager_);
       parent_node->SetKeyAt(1, internal_neighbor_node->KeyAt(0));
     } else {
@@ -686,7 +687,7 @@ bool BPLUSTREE_TYPE::IsSafe(N *node, OperationType op) {
     // }
   }
 
-  return node->GetSize() > node->GetMinSize();
+  return node->GetKeySize() > node->GetMinSize();
 }
 
 INDEX_TEMPLATE_ARGUMENTS

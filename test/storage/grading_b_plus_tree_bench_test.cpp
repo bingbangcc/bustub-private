@@ -97,6 +97,13 @@ void DeleteHelperSplit(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree
   // create transaction
   Transaction *transaction = new Transaction(tid);
   for (auto key : remove_keys) {
+    // index_key.SetFromInteger(1);
+    // std::vector<RID> result;
+    // LOG_INFO("The find test target key is %ld", index_key.ToString());
+    // bool res = tree->GetValue(index_key, &result, transaction);
+    // EXPECT_EQ(res, true);
+    // LOG_INFO("Delete page %ld, key=1 's value is %s", key, result[0].ToString().c_str());
+    
     if (static_cast<uint64_t>(key) % total_threads == thread_itr) {
       index_key.SetFromInteger(key);
       tree->Remove(index_key, transaction);
@@ -115,14 +122,13 @@ void LookupHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, con
     rid.Set(static_cast<int32_t>(key >> 32), value);
     index_key.SetFromInteger(key);
     std::vector<RID> result;
-    // LOG_INFO("The test target key is %ld", index_key.ToString());
+    // LOG_INFO("The find test target key is %ld", index_key.ToString());
     bool res = tree->GetValue(index_key, &result, transaction);
     
     EXPECT_EQ(res, true);
     EXPECT_EQ(result.size(), 1);
-    // LOG_INFO("before");
     EXPECT_EQ(result[0], rid);
-    // LOG_INFO("after");
+    // LOG_INFO("The key is %ld, the value %s , target value is %s", index_key.ToString(), result[0].ToString().c_str(), rid.ToString().c_str());
   }
   delete transaction;
 }
@@ -130,6 +136,7 @@ void LookupHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, con
 // number of iterations that the benchmark test runs
 const size_t NUM_ITERS = 20;
 // const size_t NUM_ITERS = 1;
+
 void BPlusTreeBenchmarkCall() {
   size_t num_threads = 4;
   // our slow implementation takes about 50s for running 20 iterations
@@ -144,7 +151,7 @@ void BPlusTreeBenchmarkCall() {
   std::vector<int64_t> remain_keys;
 
   size_t total_keys = 10000;
-  // size_t total_keys = 300;
+  // size_t total_keys = 255;
   size_t sieve = 2;
   for (size_t i = 1; i <= total_keys; i++) {
     insert_keys.push_back(i);
@@ -184,15 +191,15 @@ void BPlusTreeBenchmarkCall() {
     // insert all the keys
     LaunchParallelTest(num_threads, txn_start_id, InsertHelperSplit, &tree, insert_keys, num_threads);
     txn_start_id += num_threads;
-    tree.Draw(bpm, "my-tree-insert.dot");
+    // tree.Draw(bpm, "my-tree-insert.dot");
 
-    // // delete all even keys
-    // LaunchParallelTest(num_threads, txn_start_id, DeleteHelperSplit, &tree, delete_keys, num_threads);
-    // txn_start_id += num_threads;
+    // delete all even keys
+    LaunchParallelTest(num_threads, txn_start_id, DeleteHelperSplit, &tree, delete_keys, num_threads);
+    txn_start_id += num_threads;
     // tree.Draw(bpm, "my-tree-delete.dot");
     
-    // // lookup all odd keys
-    // LookupHelper(&tree, remain_keys, txn_start_id);
+    // lookup all odd keys
+    LookupHelper(&tree, remain_keys, txn_start_id);
 
     // iterate through all the keys in BPlusTree
     size_t size = 0;
