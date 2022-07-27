@@ -76,15 +76,35 @@ class Catalog {
    * @return a pointer to the metadata of the new table
    */
   TableMetadata *CreateTable(Transaction *txn, const std::string &table_name, const Schema &schema) {
+    std::unique_ptr<TableHeap> create_table_heap = std::make_unique<TableHeap>(bpm_, lock_manager_, log_manager_, txn);
+    table_oid_t now_table_oid = next_table_oid_;
+    // TableMetadata* create_table = new TableMetadata(schema, table_name, std::move(create_table_heap), now_table_oid);
+    std::unique_ptr<TableMetadata> create_table = std::make_unique<TableMetadata>(schema, table_name, std::move(create_table_heap), now_table_oid);
     BUSTUB_ASSERT(names_.count(table_name) == 0, "Table names should be unique!");
-    return nullptr;
+    next_table_oid_++;
+    names_[table_name] = now_table_oid;
+    tables_[now_table_oid] = std::move(create_table);
+
+    return tables_[now_table_oid].get();
   }
 
   /** @return table metadata by name */
-  TableMetadata *GetTable(const std::string &table_name) { return nullptr; }
+  TableMetadata *GetTable(const std::string &table_name) { 
+    if (names_.count(table_name) == 0) {
+      throw std::out_of_range("out of range");
+    }
+    table_oid_t table_oid = names_[table_name];
+    // auto table_meta_data = std::move(tables_[table_oid]);
+    return tables_[table_oid].get();
+  }
 
   /** @return table metadata by oid */
-  TableMetadata *GetTable(table_oid_t table_oid) { return nullptr; }
+  TableMetadata *GetTable(table_oid_t table_oid) { 
+    if (tables_.count(table_oid) == 0) {
+      throw std::out_of_range("out of range");
+    }
+    return tables_[table_oid].get(); 
+  }
 
   /**
    * Create a new index, populate existing data of the table and return its metadata.
@@ -101,14 +121,41 @@ class Catalog {
   IndexInfo *CreateIndex(Transaction *txn, const std::string &index_name, const std::string &table_name,
                          const Schema &schema, const Schema &key_schema, const std::vector<uint32_t> &key_attrs,
                          size_t keysize) {
-    return nullptr;
+    index_oid_t now_index_oid = next_index_oid_;
+    next_index_oid_++;
+
+    IndexMetadata* index_meta_data = new IndexMetadata(index_name, table_name, &schema, key_attrs);
+    std::unique_ptr<Index> index = std::make_unique<Index>(index_meta_data);
+    std::unique_ptr<IndexInfo> create_index = std::make_unique<IndexInfo>(key_schema, index_name, std::move(index), now_index_oid, table_name, keysize);
+    indexes_[now_index_oid] = std::move(create_index);
+    index_names_[table_name][index_name] = now_index_oid;
+    return indexes_[now_index_oid].get();
   }
 
-  IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) { return nullptr; }
+  IndexInfo *GetIndex(const std::string &index_name, const std::string &table_name) { 
+    if (index_names_.count(table_name) == 0) {
+      throw std::out_of_range("out of range");
+      if (index_names_[table_name].count(index_name) == 0) {
+        throw std::out_of_range("out of range");
+      }
+    }
+    index_oid_t index_oid = index_names_[table_name][index_name];
+    return indexes_[index_oid].get(); 
+}
 
-  IndexInfo *GetIndex(index_oid_t index_oid) { return nullptr; }
+  IndexInfo *GetIndex(index_oid_t index_oid) { 
+    return indexes_[index_oid].get(); 
+}
 
-  std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) { return std::vector<IndexInfo *>(); }
+  std::vector<IndexInfo *> GetTableIndexes(const std::string &table_name) { 
+    std::vector<IndexInfo*> ans;
+    auto nameToindex = index_names_[table_name];
+    for (auto& item : nameToindex) {
+      index_oid_t index_oid = item.second;
+      ans.push_back(indexes_[index_oid].get());
+    }
+    return std::vector<IndexInfo *>(); 
+}
 
  private:
   [[maybe_unused]] BufferPoolManager *bpm_;
@@ -125,6 +172,7 @@ class Catalog {
   std::unordered_map<index_oid_t, std::unique_ptr<IndexInfo>> indexes_;
   /** index_names_: table name -> index names -> index identifiers */
   std::unordered_map<std::string, std::unordered_map<std::string, index_oid_t>> index_names_;
+  // std::unordered_map<std::string, index_oid_t> 
   /** The next index identifier to be used */
   std::atomic<index_oid_t> next_index_oid_{0};
 };

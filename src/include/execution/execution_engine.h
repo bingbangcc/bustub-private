@@ -22,6 +22,8 @@
 #include "execution/plans/abstract_plan.h"
 #include "storage/table/tuple.h"
 namespace bustub {
+
+// ExecutionEngine用来完成查询的整个过程
 class ExecutionEngine {
  public:
   ExecutionEngine(BufferPoolManager *bpm, TransactionManager *txn_mgr, Catalog *catalog)

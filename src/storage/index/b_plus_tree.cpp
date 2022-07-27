@@ -148,7 +148,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   ValueType leaf_value{};
   bool is_exist = leaf_node->Lookup(key, &leaf_value, comparator_);
   if (is_exist) {
-    if (is_root_lock) {
+    if (*is_root_lock) {
       root_latch_.unlock();
     }
     UnlatchAndUnpin(transaction, OperationType::INSERT);
@@ -159,19 +159,20 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
   // 溢出，进行split
   if (current_size == leaf_node->GetMaxSize()) {
     LeafPage *new_leaf_node = Split<LeafPage>(leaf_node);
-    // LOG_INFO("Insert key %ld in leaf page %d result out new page %d", key.ToString(), leaf_node->GetPageId(), new_leaf_node->GetPageId());
-    // InsertIntoParent(leaf_node, new_leaf_node->KeyAt(0), new_leaf_node, transaction);
+    // LOG_INFO("Insert key %ld in leaf page %d result out new page %d", key.ToString(), leaf_node->GetPageId(),
+    // new_leaf_node->GetPageId()); InsertIntoParent(leaf_node, new_leaf_node->KeyAt(0), new_leaf_node, transaction);
     InsertIntoParent(leaf_node, new_leaf_node->KeyAt(0), new_leaf_node, transaction, is_root_lock);
     buffer_pool_manager_->UnpinPage(new_leaf_node->GetPageId(), true);
     // LOG_INFO("the is_root_lock is : %d", is_root_lock);
-    assert(is_root_lock == false);
+    assert(*is_root_lock == false);
   }
-  if (is_root_lock) {
+  if (*is_root_lock) {
     root_latch_.unlock();
   }
   UnlatchAndUnpin(transaction, OperationType::INSERT);
   // buffer_pool_manager_->UnpinPage(leaf_page->GetPageId(), true);
   // LOG_INFO("End InsertIntoLeaf, the key is %ld ", key.ToString());
+  delete is_root_lock;
   return true;
 }
 
@@ -229,7 +230,7 @@ N *BPLUSTREE_TYPE::Split(N *node) {
 // 在函数内部，函数只需要对其fetch和new的page进行unpin
 INDEX_TEMPLATE_ARGUMENTS
 void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
-                                      Transaction *transaction, bool& is_root_lock) {
+                                      Transaction *transaction, bool *is_root_lock) {
   // LOG_INFO("Enter InsertIntoParent, the key is %ld ", key.ToString());
   if (old_node->IsRootPage()) {
     // B+ tree metadata
@@ -249,8 +250,8 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     old_node->SetParentPageId(new_root_page_id);
     new_node->SetParentPageId(new_root_page_id);
     // 处理结束，释放新的根节点
-    if (is_root_lock) {
-      is_root_lock = false;
+    if (*is_root_lock) {
+      *is_root_lock = false;
       root_latch_.unlock();
     }
     buffer_pool_manager_->UnpinPage(new_root_page_id, true);
@@ -273,8 +274,8 @@ void BPLUSTREE_TYPE::InsertIntoParent(BPlusTreePage *old_node, const KeyType &ke
     InsertIntoParent(parent_node, new_parent_key, split_node, transaction, is_root_lock);
     buffer_pool_manager_->UnpinPage(split_node->GetPageId(), true);
   }
-  if (is_root_lock) {
-    is_root_lock = false;
+  if (*is_root_lock) {
+    *is_root_lock = false;
     root_latch_.unlock();
   }
   // UnlatchAndUnpin(transaction, OperationType::INSERT);
@@ -303,7 +304,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   LeafPage *leaf_node = reinterpret_cast<LeafPage *>(page->GetData());
   ValueType value{};
   if (!leaf_node->Lookup(key, &value, comparator_)) {
-    if (is_root_lock) {
+    if (*is_root_lock) {
       root_latch_.unlock();
     }
     UnlatchAndUnpin(transaction, OperationType::DELETE);
@@ -313,13 +314,14 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
   leaf_node->RemoveAndDeleteRecord(key, comparator_);
   bool should_delete = CoalesceOrRedistribute(leaf_node, transaction, is_root_lock);
   // buffer_pool_manager_->UnpinPage(leaf_node->GetPageId(), true);
-  assert(is_root_lock == false);
+  assert(*is_root_lock == false);
 
   if (should_delete) {
     // buffer_pool_manager_->DeletePage(leaf_node->GetPageId());
     transaction->AddIntoDeletedPageSet(leaf_node->GetPageId());
   }
   UnlatchAndUnpinAndDelete(transaction, OperationType::DELETE);
+  delete is_root_lock;
 }
 
 /*
@@ -331,19 +333,19 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
  */
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
-bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction, bool& is_root_lock) {
+bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction, bool *is_root_lock) {
   if (node->IsRootPage()) {
     bool root_should_delete = AdjustRoot(node);
-    if (is_root_lock) {
-      is_root_lock = false;
+    if (*is_root_lock) {
+      *is_root_lock = false;
       root_latch_.unlock();
     }
     return root_should_delete;
   }
 
   if (node->GetKeySize() >= node->GetMinSize()) {
-    if (is_root_lock) {
-      is_root_lock = false;
+    if (*is_root_lock) {
+      *is_root_lock = false;
       root_latch_.unlock();
     }
     return false;
@@ -370,8 +372,8 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction, b
     // UnlatchAndUnpin(transaction, OperationType::DELETE);
     // buffer_pool_manager_->UnpinPage(parent_node->GetPageId(), true);
     // buffer_pool_manager_->UnpinPage(neighbor_node->GetPageId(), true);
-    if (is_root_lock) {
-      is_root_lock = false;
+    if (*is_root_lock) {
+      *is_root_lock = false;
       root_latch_.unlock();
     }
     return false;
@@ -379,7 +381,7 @@ bool BPLUSTREE_TYPE::CoalesceOrRedistribute(N *node, Transaction *transaction, b
   // 合并
   bool parent_delete = Coalesce(&neighbor_node, &node, &parent_node, node_index, transaction, is_root_lock);
   // buffer_pool_manager_->UnpinPage(parent_node->GetPageId(), true);
-  assert(is_root_lock == false);
+  assert(*is_root_lock == false);
 
   if (parent_delete) {
     transaction->AddIntoDeletedPageSet(parent_node->GetPageId());
@@ -411,7 +413,7 @@ INDEX_TEMPLATE_ARGUMENTS
 template <typename N>
 bool BPLUSTREE_TYPE::Coalesce(N **neighbor_node, N **node,
                               BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> **parent, int index,
-                              Transaction *transaction, bool& is_root_lock) {
+                              Transaction *transaction, bool *is_root_lock) {
   if (index == 0) {
     std::swap(neighbor_node, node);
     index = 1;
@@ -598,11 +600,11 @@ Page *BPLUSTREE_TYPE::FindLeafPage(const KeyType &key, bool leftMost) {
 
 // Unlock和Unpin是连在一起进行的
 INDEX_TEMPLATE_ARGUMENTS
-std::pair<Page *, bool> BPLUSTREE_TYPE::FindLeafPageByOperation(const KeyType &key, OperationType op, Transaction *transaction,
-                                              bool leftMost) {
+std::pair<Page *, bool *> BPLUSTREE_TYPE::FindLeafPageByOperation(const KeyType &key, OperationType op,
+                                                                  Transaction *transaction, bool leftMost) {
   // LOG_INFO("Enter Function FindLeafPageByOperation");
   root_latch_.lock();
-  bool is_root_lock = true;
+  bool *is_root_lock = new bool(true);
   Page *root_page = buffer_pool_manager_->FetchPage(root_page_id_);
   BPlusTreePage *root_node = reinterpret_cast<BPlusTreePage *>(root_page->GetData());
   // 找到目标leaf_page
@@ -615,9 +617,9 @@ std::pair<Page *, bool> BPLUSTREE_TYPE::FindLeafPageByOperation(const KeyType &k
       root_page->WLatch();
     }
     if (IsSafe(root_node, op)) {
-      if (is_root_lock) {
+      if (*is_root_lock) {
         root_latch_.unlock();
-        is_root_lock = false;
+        *is_root_lock = false;
       }
       UnlatchAndUnpin(transaction, op);
     }
@@ -647,9 +649,9 @@ std::pair<Page *, bool> BPLUSTREE_TYPE::FindLeafPageByOperation(const KeyType &k
   }
 
   if (IsSafe(root_node, op)) {
-    if (is_root_lock) {
+    if (*is_root_lock) {
       root_latch_.unlock();
-      is_root_lock = false;
+      *is_root_lock = false;
     }
     UnlatchAndUnpin(transaction, op);
   }
@@ -658,8 +660,6 @@ std::pair<Page *, bool> BPLUSTREE_TYPE::FindLeafPageByOperation(const KeyType &k
   return std::make_pair(root_page, is_root_lock);
   // return root_page;
 }
-
-
 
 INDEX_TEMPLATE_ARGUMENTS
 template <typename N>

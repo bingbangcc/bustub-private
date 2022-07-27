@@ -412,7 +412,7 @@ TEST(BPlusTreeTests, ScaleTest) {
  */
 TEST(BPlusTreeTests, SequentialMixTest) {
   // 用指针链式读取叶子节点的数据的时候出现错误
-  
+
   // create KeyComparator and index schema
   Schema *key_schema = ParseCreateStatement("a bigint");
   GenericComparator<8> comparator(key_schema);
@@ -470,7 +470,6 @@ TEST(BPlusTreeTests, SequentialMixTest) {
   int64_t size = 0;
   index_key.SetFromInteger(start_key);
   for (auto pair : tree) {
-    // TODO 这里出现错误
     EXPECT_EQ((pair.first).ToString(), for_insert[size]);
     size++;
   }

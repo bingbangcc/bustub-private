@@ -11,9 +11,9 @@
 
 #include "b_plus_tree_test_util.h"  // NOLINT
 #include "buffer/buffer_pool_manager.h"
+#include "common/logger.h"
 #include "gtest/gtest.h"
 #include "storage/index/b_plus_tree.h"
-#include "common/logger.h"
 // Macro for time out mechanism
 #define TEST_TIMEOUT_BEGIN                           \
   std::promise<bool> promisedFinished;               \
@@ -103,7 +103,7 @@ void DeleteHelperSplit(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree
     // bool res = tree->GetValue(index_key, &result, transaction);
     // EXPECT_EQ(res, true);
     // LOG_INFO("Delete page %ld, key=1 's value is %s", key, result[0].ToString().c_str());
-    
+
     if (static_cast<uint64_t>(key) % total_threads == thread_itr) {
       index_key.SetFromInteger(key);
       tree->Remove(index_key, transaction);
@@ -124,11 +124,12 @@ void LookupHelper(BPlusTree<GenericKey<8>, RID, GenericComparator<8>> *tree, con
     std::vector<RID> result;
     // LOG_INFO("The find test target key is %ld", index_key.ToString());
     bool res = tree->GetValue(index_key, &result, transaction);
-    
+
     EXPECT_EQ(res, true);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0], rid);
-    // LOG_INFO("The key is %ld, the value %s , target value is %s", index_key.ToString(), result[0].ToString().c_str(), rid.ToString().c_str());
+    // LOG_INFO("The key is %ld, the value %s , target value is %s", index_key.ToString(), result[0].ToString().c_str(),
+    // rid.ToString().c_str());
   }
   delete transaction;
 }
@@ -197,7 +198,7 @@ void BPlusTreeBenchmarkCall() {
     LaunchParallelTest(num_threads, txn_start_id, DeleteHelperSplit, &tree, delete_keys, num_threads);
     txn_start_id += num_threads;
     // tree.Draw(bpm, "my-tree-delete.dot");
-    
+
     // lookup all odd keys
     LookupHelper(&tree, remain_keys, txn_start_id);
 

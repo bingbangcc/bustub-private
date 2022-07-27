@@ -21,6 +21,7 @@ namespace bustub {
 /**
  * ExecutorFactory creates executors for arbitrary plan nodes.
  */
+// ExecutorFactory针对不同的场景实例化不同的对象
 class ExecutorFactory {
  public:
   /**

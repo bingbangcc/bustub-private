@@ -12,8 +12,8 @@
 
 #include <queue>
 #include <string>
+#include <utility>
 #include <vector>
-
 #include "concurrency/transaction.h"
 #include "storage/index/index_iterator.h"
 #include "storage/page/b_plus_tree_internal_page.h"
@@ -83,7 +83,8 @@ class BPlusTree {
   // expose for test purpose
   Page *FindLeafPage(const KeyType &key, bool leftMost = false);
 
-  std::pair<Page *, bool> FindLeafPageByOperation(const KeyType &key, OperationType op, Transaction *transaction, bool leftMost = false);
+  std::pair<Page *, bool *> FindLeafPageByOperation(const KeyType &key, OperationType op, Transaction *transaction,
+                                                    bool leftMost = false);
 
   template <typename N>
   bool IsSafe(N *node, OperationType op);
@@ -97,17 +98,17 @@ class BPlusTree {
   bool InsertIntoLeaf(const KeyType &key, const ValueType &value, Transaction *transaction = nullptr);
 
   void InsertIntoParent(BPlusTreePage *old_node, const KeyType &key, BPlusTreePage *new_node,
-                        Transaction *transaction = nullptr, bool& is_root_lock = false);
+                        Transaction *transaction = nullptr, bool *is_root_lock = nullptr);
 
   template <typename N>
   N *Split(N *node);
 
   template <typename N>
-  bool CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr, bool& is_root_lock = false);
+  bool CoalesceOrRedistribute(N *node, Transaction *transaction = nullptr, bool *is_root_lock = nullptr);
 
   template <typename N>
   bool Coalesce(N **neighbor_node, N **node, BPlusTreeInternalPage<KeyType, page_id_t, KeyComparator> **parent,
-                int index, Transaction *transaction = nullptr, bool& is_root_lock = false);
+                int index, Transaction *transaction = nullptr, bool *is_root_lock = nullptr);
 
   template <typename N>
   void Redistribute(N *neighbor_node, N *node, int index);
