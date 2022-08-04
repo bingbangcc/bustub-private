@@ -50,12 +50,19 @@ bool BPLUSTREE_TYPE::IsEmpty() const { return root_page_id_ == INVALID_PAGE_ID; 
 INDEX_TEMPLATE_ARGUMENTS
 bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result, Transaction *transaction) {
   // LOG_INFO("Enter Function GetValue, the target key is : %ld", key.ToString());
+  // 如果当前索引树是空的，则不用继续直接返回
+  if (root_page_id_ == INVALID_PAGE_ID) {
+    return false;
+  }
   Page *leaf_page;
+  bool *is_root_lock;
   if (transaction == nullptr) {
     // LOG_INFO("Enter nullptr");
     leaf_page = FindLeafPage(key, false);
   } else {
-    leaf_page = FindLeafPageByOperation(key, OperationType::FIND, transaction, false).first;
+    auto ret_value = FindLeafPageByOperation(key, OperationType::FIND, transaction, false);
+    leaf_page = ret_value.first;
+    is_root_lock = ret_value.second;
   }
   // LOG_INFO("Enter Function GetValue");
   // LOG_INFO("leaf page id is : %d", leaf_page->GetPageId());
@@ -72,6 +79,9 @@ bool BPLUSTREE_TYPE::GetValue(const KeyType &key, std::vector<ValueType> *result
     UnlatchAndUnpin(transaction, OperationType::FIND);
   }
   // LOG_INFO("End Function GetValue");
+  if (transaction != nullptr) {
+    delete is_root_lock;
+  }
   return is_exist;
 }
 
@@ -152,6 +162,7 @@ bool BPLUSTREE_TYPE::InsertIntoLeaf(const KeyType &key, const ValueType &value, 
       root_latch_.unlock();
     }
     UnlatchAndUnpin(transaction, OperationType::INSERT);
+    delete is_root_lock;
     return false;
   }
 
@@ -308,6 +319,7 @@ void BPLUSTREE_TYPE::Remove(const KeyType &key, Transaction *transaction) {
       root_latch_.unlock();
     }
     UnlatchAndUnpin(transaction, OperationType::DELETE);
+    delete is_root_lock;
     return;
   }
 

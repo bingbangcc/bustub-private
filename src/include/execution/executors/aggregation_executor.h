@@ -67,6 +67,7 @@ class SimpleAggregationHashTable {
     return {values};
   }
 
+  // 根据输入的AggregateValue来更新待输出的结果AggregateValue
   /** Combines the input into the aggregation result. */
   void CombineAggregateValues(AggregateValue *result, const AggregateValue &input) {
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
@@ -91,6 +92,8 @@ class SimpleAggregationHashTable {
     }
   }
 
+  // 对输入的一对key value进行hash处理
+  // 这里的key是进行hash的数据, 而value是对应要进行聚合函数处理的列的单个数据
   /**
    * Inserts a value into the hash table and then combines it with the current aggregation.
    * @param agg_key the key to be inserted
@@ -197,7 +200,11 @@ class AggregationExecutor : public AbstractExecutor {
   std::unique_ptr<AbstractExecutor> child_;
   /** Simple aggregation hash table. */
   // Uncomment me! SimpleAggregationHashTable aht_;
+  std::unique_ptr<SimpleAggregationHashTable> aht_;
+
   /** Simple aggregation hash table iterator. */
+  SimpleAggregationHashTable::Iterator aht_iterator_;
   // Uncomment me! SimpleAggregationHashTable::Iterator aht_iterator_;
+  const AbstractExpression *having_;
 };
 }  // namespace bustub

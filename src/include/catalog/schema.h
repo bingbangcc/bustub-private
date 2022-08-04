@@ -21,6 +21,7 @@
 
 namespace bustub {
 
+// 在表的列向量结构
 class Schema {
  public:
   /**

@@ -83,6 +83,8 @@ class AggregationPlanNode : public AbstractPlanNode {
 };
 
 struct AggregateKey {
+  // 决定如何进行分组的key值，因为可能有多个
+  // 作为进行聚合的索引的值，比如班级和性别
   std::vector<Value> group_bys_;
 
   /**
@@ -100,6 +102,8 @@ struct AggregateKey {
   }
 };
 
+// 被某个AggregateKey聚合为一些组，每个组里的值
+// 可能一次计算多个聚合函数，这包括不同的列和不同的函数
 struct AggregateValue {
   std::vector<Value> aggregates_;
 };
@@ -110,6 +114,9 @@ namespace std {
 /**
  * Implements std::hash on AggregateKey.
  */
+// 模板特例化，针对AggregateKey类型进行hash
+// 这里是特例化了std::hash是为了让std::unordered_map<AggregateKey, AggregateValue> ht有效
+// 因为unordered_map不能直接索引自定义类型，要重写hash才可以
 template <>
 struct hash<bustub::AggregateKey> {
   std::size_t operator()(const bustub::AggregateKey &agg_key) const {
