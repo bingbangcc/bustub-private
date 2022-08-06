@@ -13,4 +13,5 @@ zip -r project2-submission.zip \
        src/storage/index/b_plus_tree.cpp \
        src/include/storage/index/index_iterator.h \
        src/storage/index/index_iterator.cpp \
+       src/include/storage/page/tmp_tuple_page.h \
        build_support/gtest_CMakeLists.txt.in

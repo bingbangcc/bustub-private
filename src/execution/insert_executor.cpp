@@ -41,13 +41,16 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
     const auto &values = raw_values[cur_insert_pos_++];
     // for (const auto& values : raw_values) {
 
-    *tuple = Tuple(values, &table_meta_data_->schema_);
-    if (!table_meta_data_->table_->InsertTuple(*tuple, rid, exec_ctx_->GetTransaction())) {
+    // *tuple = Tuple(values, &table_meta_data_->schema_);
+    Tuple insert_tuple(values, &table_meta_data_->schema_);
+
+    if (!table_meta_data_->table_->InsertTuple(insert_tuple, rid, exec_ctx_->GetTransaction())) {
       return false;
     }
     for (auto &index_info : index_info_vec_) {
       auto cur_index = index_info->index_.get();
-      Tuple key(tuple->KeyFromTuple(table_meta_data_->schema_, index_info->key_schema_, cur_index->GetKeyAttrs()));
+      Tuple key(
+          insert_tuple.KeyFromTuple(table_meta_data_->schema_, index_info->key_schema_, cur_index->GetKeyAttrs()));
       cur_index->InsertEntry(key, *rid, exec_ctx_->GetTransaction());
     }
 
@@ -56,14 +59,16 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
     return true;
   }
 
+  Tuple insert_tuple;
   // 从child处获得insert数据
-  if (child_executor_->Next(tuple, rid)) {
-    if (!table_meta_data_->table_->InsertTuple(*tuple, rid, exec_ctx_->GetTransaction())) {
+  if (child_executor_->Next(&insert_tuple, rid)) {
+    if (!table_meta_data_->table_->InsertTuple(insert_tuple, rid, exec_ctx_->GetTransaction())) {
       return false;
     }
     for (auto &index_info : index_info_vec_) {
       auto cur_index = index_info->index_.get();
-      Tuple key(tuple->KeyFromTuple(table_meta_data_->schema_, index_info->key_schema_, cur_index->GetKeyAttrs()));
+      Tuple key(
+          insert_tuple.KeyFromTuple(table_meta_data_->schema_, index_info->key_schema_, cur_index->GetKeyAttrs()));
       cur_index->InsertEntry(key, *rid, exec_ctx_->GetTransaction());
     }
     return true;

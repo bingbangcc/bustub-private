@@ -46,6 +46,6 @@ class SeqScanExecutor : public AbstractExecutor {
   TableIterator end_;
   TableMetadata *table_meta_data_;
 
-  std::vector<uint32_t> out_schema_index_;
+  // std::vector<uint32_t> out_schema_index_;
 };
 }  // namespace bustub

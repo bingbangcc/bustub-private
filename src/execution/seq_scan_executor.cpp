@@ -27,11 +27,6 @@ namespace bustub {
 SeqScanExecutor::SeqScanExecutor(ExecutorContext *exec_ctx, const SeqScanPlanNode *plan)
     : AbstractExecutor(exec_ctx), plan_(plan), cur_(nullptr, RID{}, nullptr), end_(nullptr, RID{}, nullptr) {
   table_meta_data_ = exec_ctx->GetCatalog()->GetTable(plan->GetTableOid());
-  out_schema_index_.reserve(plan->OutputSchema()->GetColumnCount());
-  for (uint32_t i = 0; i < plan->OutputSchema()->GetColumnCount(); ++i) {
-    std::string col_name = plan->OutputSchema()->GetColumn(i).GetName();
-    out_schema_index_.push_back(table_meta_data_->schema_.GetColIdx(col_name));
-  }
 }
 
 // ExecutorContext *exec_ctx
@@ -52,10 +47,13 @@ bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
     // 该tuple是需要向上传递进行输出的
     if (plan_->GetPredicate() == nullptr ||
         plan_->GetPredicate()->Evaluate(tuple, &table_meta_data_->schema_).GetAs<bool>()) {
-      std::vector<Value> values(out_schema_index_.size());
       const Schema *output_schema = GetOutputSchema();
-      for (uint32_t i = 0; i < out_schema_index_.size(); ++i) {
-        values[i] = tuple->GetValue(&table_meta_data_->schema_, out_schema_index_[i]);
+      std::vector<Value> values(output_schema->GetColumnCount());
+      auto output_columns = output_schema->GetColumns();
+
+      for (uint32_t i = 0; i < values.size(); ++i) {
+        // values[i] = tuple->GetValue(&table_meta_data_->schema_, out_schema_index_[i]);
+        values[i] = output_columns[i].GetExpr()->Evaluate(tuple, &table_meta_data_->schema_);
       }
       *tuple = Tuple(values, output_schema);
       // std::cout << "success" << std::endl;

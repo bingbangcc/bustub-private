@@ -100,6 +100,7 @@ Tuple Tuple::KeyFromTuple(const Schema &schema, const Schema &key_schema, const 
   std::vector<Value> values;
   values.reserve(key_attrs.size());
   for (auto idx : key_attrs) {
+    // 0
     values.emplace_back(this->GetValue(&schema, idx));
   }
   return Tuple(values, &key_schema);

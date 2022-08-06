@@ -130,8 +130,17 @@ class Catalog {
     // IndexMetadata* index_meta_data = new IndexMetadata(index_name, table_name, &schema, key_attrs);
     std::unique_ptr<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>>> index =
         std::make_unique<BPlusTreeIndex<GenericKey<8>, RID, GenericComparator<8>>>(index_meta_data.release(), bpm_);
+
+    // 构建索引表的基本信息完毕，接下来将表中数据插入到索引表中
+    auto table_heap = GetTable(table_name)->table_.get();
+    for (auto it = table_heap->Begin(txn); it != table_heap->End(); ++it) {
+      Tuple key(it->KeyFromTuple(schema, key_schema, key_attrs));
+      index->InsertEntry(key, it->GetRid(), txn);
+    }
+
     std::unique_ptr<IndexInfo> create_index =
         std::make_unique<IndexInfo>(key_schema, index_name, std::move(index), now_index_oid, table_name, keysize);
+
     indexes_[now_index_oid] = std::move(create_index);
     index_names_[table_name][index_name] = now_index_oid;
     return indexes_[now_index_oid].get();

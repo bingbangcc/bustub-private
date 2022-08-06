@@ -48,6 +48,6 @@ class IndexScanExecutor : public AbstractExecutor {
   IndexInfo *index_info_;
   IndexIterator<GenericKey<8>, RID, GenericComparator<8>> cur_iter_;
   IndexIterator<GenericKey<8>, RID, GenericComparator<8>> end_iter_;
-  std::vector<uint32_t> out_schema_index_;
+  // std::vector<uint32_t> out_schema_index_;
 };
 }  // namespace bustub

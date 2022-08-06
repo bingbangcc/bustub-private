@@ -39,6 +39,9 @@ class ExecutorContext {
                   LockManager *lock_mgr)
       : transaction_(transaction), catalog_{catalog}, bpm_{bpm}, txn_mgr_(txn_mgr), lock_mgr_(lock_mgr) {}
 
+  ExecutorContext(Transaction *transaction, Catalog *catalog, BufferPoolManager *bpm)
+      : transaction_(transaction), catalog_{catalog}, bpm_{bpm}, txn_mgr_(nullptr), lock_mgr_(nullptr) {}
+
   DISALLOW_COPY_AND_MOVE(ExecutorContext);
 
   ~ExecutorContext() = default;

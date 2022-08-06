@@ -21,6 +21,7 @@
 #include "execution/executor_context.h"
 #include "execution/executors/abstract_executor.h"
 #include "execution/expressions/abstract_expression.h"
+#include "execution/expressions/column_value_expression.h"
 #include "execution/plans/nested_index_join_plan.h"
 #include "storage/table/tmp_tuple.h"
 #include "storage/table/tuple.h"
@@ -55,7 +56,7 @@ class NestIndexJoinExecutor : public AbstractExecutor {
 
   TableMetadata *inner_table_info_;
   IndexInfo *inner_index_info_;
-  std::vector<uint32_t> key_schema_index_;
+  uint32_t outer_col_idx_;
 
   const Schema *inner_table_schema_;
   const Schema *outer_table_schema_;

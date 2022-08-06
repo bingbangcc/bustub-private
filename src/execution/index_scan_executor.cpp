@@ -16,11 +16,6 @@ IndexScanExecutor::IndexScanExecutor(ExecutorContext *exec_ctx, const IndexScanP
     : AbstractExecutor(exec_ctx), plan_(plan), cur_iter_(nullptr, nullptr, 0), end_iter_(nullptr, nullptr, 0) {
   index_info_ = exec_ctx->GetCatalog()->GetIndex(plan_->GetIndexOid());
   table_meta_data_ = exec_ctx->GetCatalog()->GetTable(index_info_->table_name_);
-  out_schema_index_.reserve(plan_->OutputSchema()->GetColumnCount());
-  for (uint32_t i = 0; i < out_schema_index_.size(); ++i) {
-    std::string col_name = plan_->OutputSchema()->GetColumn(i).GetName();
-    out_schema_index_.push_back(table_meta_data_->schema_.GetColIdx(col_name));
-  }
 }
 
 void IndexScanExecutor::Init() {
@@ -37,11 +32,14 @@ bool IndexScanExecutor::Next(Tuple *tuple, RID *rid) {
     table_meta_data_->table_->GetTuple(*rid, tuple, exec_ctx_->GetTransaction());
     if (plan_->GetPredicate() == nullptr ||
         plan_->GetPredicate()->Evaluate(tuple, &table_meta_data_->schema_).GetAs<bool>()) {
-      std::vector<Value> values(out_schema_index_.size());
+      std::vector<Value> values(plan_->OutputSchema()->GetColumnCount());
       const Schema *output_schema = GetOutputSchema();
-      for (uint32_t i = 0; i < out_schema_index_.size(); ++i) {
-        values[i] = tuple->GetValue(&table_meta_data_->schema_, out_schema_index_[i]);
+
+      auto output_columns = plan_->OutputSchema()->GetColumns();
+      for (uint32_t i = 0; i < values.size(); ++i) {
+        values[i] = output_columns[i].GetExpr()->Evaluate(tuple, &table_meta_data_->schema_);
       }
+
       *tuple = Tuple(values, output_schema);
       return true;
     }
