@@ -154,7 +154,7 @@ void CheckTxnLockSize(Transaction *txn, size_t shared_size, size_t exclusive_siz
 }
 
 // NOLINTNEXTLINE
-TEST_F(TransactionTest, DISABLED_SimpleInsertRollbackTest) {
+TEST_F(TransactionTest, /*DISABLED_*/ SimpleInsertRollbackTest) {
   // txn1: INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)
   // txn1: abort
   // txn2: SELECT * FROM empty_table2;
@@ -168,9 +168,11 @@ TEST_F(TransactionTest, DISABLED_SimpleInsertRollbackTest) {
   // Create insert plan node
   auto table_info = exec_ctx1->GetCatalog()->GetTable("empty_table2");
   InsertPlanNode insert_plan{std::move(raw_vals), table_info->oid_};
-
+  LOG_INFO("txn1 wants to insert 3 nodes");
   GetExecutionEngine()->Execute(&insert_plan, nullptr, txn1, exec_ctx1.get());
+  LOG_INFO("txn1 finish insert 3 nodes");
   GetTxnManager()->Abort(txn1);
+  LOG_INFO("txn1 aborted");
   delete txn1;
 
   // Iterate through table make sure that values were not inserted.
@@ -190,11 +192,12 @@ TEST_F(TransactionTest, DISABLED_SimpleInsertRollbackTest) {
   std::vector<RID> rids;
 
   GetTxnManager()->Commit(txn2);
+  LOG_INFO("txn2 committed");
   delete txn2;
 }
 
 // NOLINTNEXTLINE
-TEST_F(TransactionTest, DISABLED_DirtyReadsTest) {
+TEST_F(TransactionTest, /*DISABLED_*/ DirtyReadsTest) {
   // txn1: INSERT INTO empty_table2 VALUES (200, 20), (201, 21), (202, 22)
   // txn2: SELECT * FROM empty_table2;
   // txn1: abort

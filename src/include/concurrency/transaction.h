@@ -61,6 +61,7 @@ using index_oid_t = uint32_t;
 /**
  * WriteRecord tracks information related to a write.
  */
+// 要进行的操作集合
 class TableWriteRecord {
  public:
   TableWriteRecord(RID rid, WType wtype, const Tuple &tuple, TableHeap *table)
@@ -79,9 +80,15 @@ class TableWriteRecord {
  */
 class IndexWriteRecord {
  public:
-  IndexWriteRecord(RID rid, table_oid_t table_oid, WType wtype, const Tuple &tuple, index_oid_t index_oid,
-                   Catalog *catalog)
-      : rid_(rid), table_oid_(table_oid), wtype_(wtype), tuple_(tuple), index_oid_(index_oid), catalog_(catalog) {}
+  IndexWriteRecord(RID rid, table_oid_t table_oid, WType wtype, const Tuple &tuple, const Tuple &old_tuple,
+                   index_oid_t index_oid, Catalog *catalog)
+      : rid_(rid),
+        table_oid_(table_oid),
+        wtype_(wtype),
+        tuple_(tuple),
+        old_tuple_(old_tuple),
+        index_oid_(index_oid),
+        catalog_(catalog) {}
 
   /** The rid is the value stored in the index. */
   RID rid_;
@@ -197,7 +204,7 @@ class Transaction {
    * Adds an index write record into the index write set.
    * @param write_record write record to be added
    */
-  inline void AppendTableWriteRecord(const IndexWriteRecord &write_record) {
+  inline void AppendIndexWriteRecord(const IndexWriteRecord &write_record) {
     index_write_set_->push_back(write_record);
   }
 

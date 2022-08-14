@@ -29,6 +29,7 @@ void DeleteExecutor::Init() {
 }
 
 bool DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
+
   if (child_executor_->Next(tuple, rid)) {
     if (!table_meta_data_->table_->MarkDelete(*rid, exec_ctx_->GetTransaction())) {
       return false;
@@ -38,6 +39,7 @@ bool DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
       auto cur_index = index_info->index_.get();
       Tuple key(tuple->KeyFromTuple(table_meta_data_->schema_, index_info->key_schema_, cur_index->GetKeyAttrs()));
       cur_index->DeleteEntry(key, *rid, exec_ctx_->GetTransaction());
+
     }
     return true;
   }

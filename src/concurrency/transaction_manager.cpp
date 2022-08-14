@@ -43,6 +43,7 @@ void TransactionManager::Commit(Transaction *txn) {
     auto &item = write_set->back();
     auto table = item.table_;
     if (item.wtype_ == WType::DELETE) {
+      // 之前在table_heap中进行的是假删，事务提交的话需要进行真删
       // Note that this also releases the lock when holding the page latch.
       table->ApplyDelete(item.rid_, txn);
     }
@@ -57,8 +58,10 @@ void TransactionManager::Commit(Transaction *txn) {
 }
 
 void TransactionManager::Abort(Transaction *txn) {
+  LOG_INFO("Enter function Abort transaction %d", txn->GetTransactionId());
   txn->SetState(TransactionState::ABORTED);
   // Rollback before releasing the lock.
+  // 回滚所有对于表的修改
   auto table_write_set = txn->GetWriteSet();
   while (!table_write_set->empty()) {
     auto &item = table_write_set->back();
@@ -67,6 +70,7 @@ void TransactionManager::Abort(Transaction *txn) {
       table->RollbackDelete(item.rid_, txn);
     } else if (item.wtype_ == WType::INSERT) {
       // Note that this also releases the lock when holding the page latch.
+      LOG_INFO("try to delete transaction %d  rid: %s", txn->GetTransactionId(), item.rid_.ToString().c_str());
       table->ApplyDelete(item.rid_, txn);
     } else if (item.wtype_ == WType::UPDATE) {
       table->UpdateTuple(item.tuple_, item.rid_, txn);
@@ -75,6 +79,7 @@ void TransactionManager::Abort(Transaction *txn) {
   }
   table_write_set->clear();
   // Rollback index updates
+  // 回滚所有对于索引的修改
   auto index_write_set = txn->GetIndexWriteSet();
   while (!index_write_set->empty()) {
     auto &item = index_write_set->back();

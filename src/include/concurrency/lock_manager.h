@@ -18,11 +18,13 @@
 #include <memory>
 #include <mutex>  // NOLINT
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
-
+#include <set>
 #include "common/rid.h"
 #include "concurrency/transaction.h"
+// #include "concurrency/transaction_manager.h"
 
 namespace bustub {
 
@@ -48,6 +50,10 @@ class LockManager {
     std::list<LockRequest> request_queue_;
     std::condition_variable cv_;  // for notifying blocked transactions on this rid
     bool upgrading_ = false;
+    // 该tuple在被多少个事务读
+    int share_lock_count_ = 0;
+    // 该tuple有没有在被某个事物写
+    bool is_writing_ = false;
   };
 
  public:
@@ -125,11 +131,16 @@ class LockManager {
    */
   bool HasCycle(txn_id_t *txn_id);
 
+  bool DFS(txn_id_t txn_id);
+
   /** @return the set of all edges in the graph, used for testing only! */
   std::vector<std::pair<txn_id_t, txn_id_t>> GetEdgeList();
 
   /** Runs cycle detection in the background. */
   void RunCycleDetection();
+
+  // 好像是函数传参不让用引用
+  std::list<LockRequest>::iterator GetIterator(std::list<LockRequest> *request_queue, txn_id_t txn_id);
 
  private:
   std::mutex latch_;
@@ -140,6 +151,10 @@ class LockManager {
   std::unordered_map<RID, LockRequestQueue> lock_table_;
   /** Waits-for graph representation. */
   std::unordered_map<txn_id_t, std::vector<txn_id_t>> waits_for_;
+
+  std::set<txn_id_t> txn_set_;
+  std::set<txn_id_t> active_txn_set_;
+  std::set<txn_id_t> safe_txn_set_;
 };
 
 }  // namespace bustub

@@ -39,14 +39,13 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
       return false;
     }
     const auto &values = raw_values[cur_insert_pos_++];
-    // for (const auto& values : raw_values) {
 
-    // *tuple = Tuple(values, &table_meta_data_->schema_);
     Tuple insert_tuple(values, &table_meta_data_->schema_);
 
     if (!table_meta_data_->table_->InsertTuple(insert_tuple, rid, exec_ctx_->GetTransaction())) {
       return false;
     }
+
     for (auto &index_info : index_info_vec_) {
       auto cur_index = index_info->index_.get();
       Tuple key(
@@ -55,7 +54,7 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
     }
 
     // }
-    // std::cout << "raw insert success" << std::endl;
+    std::cout << "raw insert success" << std::endl;
     return true;
   }
 
@@ -65,6 +64,7 @@ bool InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) {
     if (!table_meta_data_->table_->InsertTuple(insert_tuple, rid, exec_ctx_->GetTransaction())) {
       return false;
     }
+
     for (auto &index_info : index_info_vec_) {
       auto cur_index = index_info->index_.get();
       Tuple key(

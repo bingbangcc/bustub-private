@@ -37,6 +37,8 @@ TableHeap::TableHeap(BufferPoolManager *buffer_pool_manager, LockManager *lock_m
 }
 
 bool TableHeap::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn) {
+  // LOG_INFO("txn %d wants to insert tuple", txn->GetTransactionId());
+
   if (tuple.size_ + 32 > PAGE_SIZE) {  // larger than one page size
     txn->SetState(TransactionState::ABORTED);
     return false;
@@ -52,6 +54,7 @@ bool TableHeap::InsertTuple(const Tuple &tuple, RID *rid, Transaction *txn) {
   // Insert into the first page with enough space. If no such page exists, create a new page and insert into that.
   // INVARIANT: cur_page is WLatched if you leave the loop normally.
   while (!cur_page->InsertTuple(tuple, rid, txn, lock_manager_, log_manager_)) {
+    // LOG_INFO("page has inserted rid");
     auto next_page_id = cur_page->GetNextPageId();
     // If the next page is a valid page,
     if (next_page_id != INVALID_PAGE_ID) {

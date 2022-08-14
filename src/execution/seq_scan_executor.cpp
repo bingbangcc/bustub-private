@@ -38,15 +38,16 @@ void SeqScanExecutor::Init() {
 }
 
 bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
-  // std::cout << "carry out seq_scan_executor Next" << std::endl;
   while (cur_ != end_) {
     *rid = cur_->GetRid();
     *tuple = *cur_;
     cur_++;
+
     // 当没有谓词，或者符合谓词的要求的时候
     // 该tuple是需要向上传递进行输出的
     if (plan_->GetPredicate() == nullptr ||
         plan_->GetPredicate()->Evaluate(tuple, &table_meta_data_->schema_).GetAs<bool>()) {
+
       const Schema *output_schema = GetOutputSchema();
       std::vector<Value> values(output_schema->GetColumnCount());
       auto output_columns = output_schema->GetColumns();
@@ -56,7 +57,7 @@ bool SeqScanExecutor::Next(Tuple *tuple, RID *rid) {
         values[i] = output_columns[i].GetExpr()->Evaluate(tuple, &table_meta_data_->schema_);
       }
       *tuple = Tuple(values, output_schema);
-      // std::cout << "success" << std::endl;
+
       return true;
     }
   }

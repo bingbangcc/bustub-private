@@ -78,41 +78,42 @@ void TableGenerator::GenerateTestTables() {
    */
   std::vector<TableInsertMeta> insert_meta{
       // The empty table
-      {"empty_table", 0, {{"colA", TypeId::INTEGER, false, Dist::Serial, 0, 0}}},
+      // {"empty_table", 0, {{"colA", TypeId::INTEGER, false, Dist::Serial, 0, 0}}},
 
-      // Table 1
-      {"test_1",
-       TEST1_SIZE,
-       {{"colA", TypeId::INTEGER, false, Dist::Serial, 0, 0},
-        {"colB", TypeId::INTEGER, false, Dist::Uniform, 0, 9},
-        {"colC", TypeId::INTEGER, false, Dist::Uniform, 0, 9999},
-        {"colD", TypeId::INTEGER, false, Dist::Uniform, 0, 99999}}},
+      // // Table 1
+      // {"test_1",
+      //  TEST1_SIZE,
+      //  {{"colA", TypeId::INTEGER, false, Dist::Serial, 0, 0},
+      //   {"colB", TypeId::INTEGER, false, Dist::Uniform, 0, 9},
+      //   {"colC", TypeId::INTEGER, false, Dist::Uniform, 0, 9999},
+      //   {"colD", TypeId::INTEGER, false, Dist::Uniform, 0, 99999}}},
 
-      // Table 2
-      {"test_2",
-       TEST2_SIZE,
-       {{"col1", TypeId::SMALLINT, false, Dist::Serial, 0, 0},
-        {"col2", TypeId::INTEGER, true, Dist::Uniform, 0, 9},
-        {"col3", TypeId::BIGINT, false, Dist::Uniform, 0, 1024},
-        {"col4", TypeId::INTEGER, true, Dist::Uniform, 0, 2048}}},
+      // // Table 2
+      // {"test_2",
+      //  TEST2_SIZE,
+      //  {{"col1", TypeId::SMALLINT, false, Dist::Serial, 0, 0},
+      //   {"col2", TypeId::INTEGER, true, Dist::Uniform, 0, 9},
+      //   {"col3", TypeId::BIGINT, false, Dist::Uniform, 0, 1024},
+      //   {"col4", TypeId::INTEGER, true, Dist::Uniform, 0, 2048}}},
 
-      // Table 3
-      {"test_3",
-       TEST2_SIZE,
-       {{"col1", TypeId::INTEGER, false, Dist::Serial, 0, 0},
-        {"col2", TypeId::INTEGER, true, Dist::Uniform, 10, 19},
-        {"col3", TypeId::BIGINT, false, Dist::Uniform, 0, 1024},
-        {"col4", TypeId::INTEGER, true, Dist::Uniform, 0, 2048}}},
+      // // Table 3
+      // {"test_3",
+      //  TEST2_SIZE,
+      //  {{"col1", TypeId::INTEGER, false, Dist::Serial, 0, 0},
+      //   {"col2", TypeId::INTEGER, true, Dist::Uniform, 10, 19},
+      //   {"col3", TypeId::BIGINT, false, Dist::Uniform, 0, 1024},
+      //   {"col4", TypeId::INTEGER, true, Dist::Uniform, 0, 2048}}},
 
       // Empty table with two columns
       {"empty_table2",
        0,
        {{"colA", TypeId::INTEGER, false, Dist::Serial, 0, 0}, {"colB", TypeId::INTEGER, false, Dist::Uniform, 0, 9}}},
 
-      // Empty table with two columns
-      {"empty_table3",
-       0,
-       {{"outA", TypeId::INTEGER, false, Dist::Serial, 0, 0}, {"outB", TypeId::INTEGER, false, Dist::Uniform, 0, 9}}},
+      // // Empty table with two columns
+      // {"empty_table3",
+      //  0,
+      //  {{"outA", TypeId::INTEGER, false, Dist::Serial, 0, 0}, {"outB", TypeId::INTEGER, false, Dist::Uniform, 0,
+      //  9}}},
   };
 
   for (auto &table_meta : insert_meta) {

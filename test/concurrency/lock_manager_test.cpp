@@ -6,6 +6,7 @@
 #include <thread>  // NOLINT
 
 #include "common/config.h"
+#include "common/logger.h"
 #include "concurrency/lock_manager.h"
 #include "concurrency/transaction_manager.h"
 #include "gtest/gtest.h"
@@ -77,7 +78,8 @@ void BasicTest1() {
     delete txns[i];
   }
 }
-TEST(LockManagerTest, DISABLED_BasicTest) { BasicTest1(); }
+
+TEST(LockManagerTest, /*DISABLED_*/ BasicTest) { BasicTest1(); }
 
 void TwoPLTest() {
   LockManager lock_mgr{};
@@ -123,7 +125,7 @@ void TwoPLTest() {
 
   delete txn;
 }
-TEST(LockManagerTest, DISABLED_TwoPLTest) { TwoPLTest(); }
+TEST(LockManagerTest, /*DISABLED_*/ TwoPLTest) { TwoPLTest(); }
 
 void UpgradeTest() {
   LockManager lock_mgr{};
@@ -150,9 +152,9 @@ void UpgradeTest() {
   txn_mgr.Commit(&txn);
   CheckCommitted(&txn);
 }
-TEST(LockManagerTest, DISABLED_UpgradeLockTest) { UpgradeTest(); }
+TEST(LockManagerTest, /*DISABLED_*/ UpgradeLockTest) { UpgradeTest(); }
 
-TEST(LockManagerTest, DISABLED_GraphEdgeTest) {
+TEST(LockManagerTest, /*DISABLED_*/ GraphEdgeTest) {
   LockManager lock_mgr{};
   TransactionManager txn_mgr{&lock_mgr};
   const int num_nodes = 100;
@@ -194,7 +196,7 @@ TEST(LockManagerTest, DISABLED_GraphEdgeTest) {
   }
 }
 
-TEST(LockManagerTest, DISABLED_BasicCycleTest) {
+TEST(LockManagerTest, /*DISABLED_*/ BasicCycleTest) {
   LockManager lock_mgr{}; /* Use Deadlock detection */
   TransactionManager txn_mgr{&lock_mgr};
 
@@ -211,7 +213,10 @@ TEST(LockManagerTest, DISABLED_BasicCycleTest) {
   EXPECT_EQ(false, lock_mgr.HasCycle(&txn));
 }
 
-TEST(LockManagerTest, DISABLED_BasicDeadlockDetectionTest) {
+TEST(LockManagerTest, /*DISABLED_*/ BasicDeadlockDetectionTest) {
+  LOG_ERROR("function BasicDeadlockDetectionTest error");
+  LOG_WARN("function BasicDeadlockDetectionTest warn");
+
   LockManager lock_mgr{};
   cycle_detection_interval = std::chrono::milliseconds(500);
   TransactionManager txn_mgr{&lock_mgr};
@@ -224,36 +229,50 @@ TEST(LockManagerTest, DISABLED_BasicDeadlockDetectionTest) {
 
   std::thread t0([&] {
     // Lock and sleep
+    LOG_INFO("thread 0 begin");
     bool res = lock_mgr.LockExclusive(txn0, rid0);
     EXPECT_EQ(true, res);
     EXPECT_EQ(TransactionState::GROWING, txn0->GetState());
+    LOG_INFO("thread 0 get rid0 x-lock");
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    LOG_INFO("thread 0 sleep 100 finish");
 
     // This will block
+    LOG_INFO("thread 0 wants rid1 x-lock");
     lock_mgr.LockExclusive(txn0, rid1);
-
+    LOG_INFO("thread 0 get rid1 x-lock");
     lock_mgr.Unlock(txn0, rid0);
+    LOG_INFO("thread 0 free rid0 x-lock");
     lock_mgr.Unlock(txn0, rid1);
-
+    LOG_INFO("thread 0 free rid1 x-lock");
     txn_mgr.Commit(txn0);
+    LOG_INFO("thread 0 commit");
     EXPECT_EQ(TransactionState::COMMITTED, txn0->GetState());
+    LOG_INFO("thread 0 return");
   });
 
   std::thread t1([&] {
     // Sleep so T0 can take necessary locks
+    LOG_INFO("thread 1 begin");
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    LOG_INFO("thread 1 sleep 50 finish");
     bool res = lock_mgr.LockExclusive(txn1, rid1);
     EXPECT_EQ(res, true);
     EXPECT_EQ(TransactionState::GROWING, txn1->GetState());
+    LOG_INFO("thread 1 get rid1 x-lock");
 
     // This will block
     try {
+      LOG_INFO("thread 1 wants rid0 x-lock");
       res = lock_mgr.LockExclusive(txn1, rid0);
+      LOG_INFO("thread 1 is killed by cycle detection thread");
       EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+      LOG_INFO("abort thread 1 in try");
       txn_mgr.Abort(txn1);
     } catch (TransactionAbortException &e) {
       // std::cout << e.GetInfo() << std::endl;
       EXPECT_EQ(TransactionState::ABORTED, txn1->GetState());
+      LOG_INFO("abort thread 1 in catch");
       txn_mgr.Abort(txn1);
     }
   });

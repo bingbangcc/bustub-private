@@ -44,7 +44,6 @@ bool NestIndexJoinExecutor::Next(Tuple *tuple, RID *rid) {
     if (find_result.empty()) {
       return false;
     }
-    
 
     RID *target_rid = &(find_result[0]);
     Tuple inner_tuple;
