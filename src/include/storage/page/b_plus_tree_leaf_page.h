@@ -68,6 +68,7 @@ class BPlusTreeLeafPage : public BPlusTreePage {
   void CopyLastFrom(const MappingType &item);
   void CopyFirstFrom(const MappingType &item);
   page_id_t next_page_id_;
+  // 都是用指针来进行操作，不需要提前确定这个数组是多大的，每次操作前通过GetSize()知道当前数组实际有多大就行
   MappingType array[0];
 };
 }  // namespace bustub
